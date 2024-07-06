@@ -2,8 +2,12 @@ const canvas = document.getElementById('tetris');
 const context = canvas.getContext('2d');
 
 const grid = canvas.width / 10;
-let redValue = 255;
-let blueValue = 255;
+
+let redValue = 154;
+let blueValue = 139;
+
+document.getElementById('red').value = redValue;
+document.getElementById('blue').value = blueValue;
 
 function getTetrominoColors() {
     return {
@@ -222,15 +226,20 @@ document.addEventListener('keydown', event => {
         case ' ':
             playerRotate(1);
             break;
+        case 'p':
+            alert("Rouge : " + redValue + " - Bleu : " + blueValue);
+            break;
     }
 });
 
 document.getElementById('red').addEventListener('input', (event) => {
     redValue = event.target.value;
+    event.target.blur();
 });
 
 document.getElementById('blue').addEventListener('input', (event) => {
     blueValue = event.target.value;
+    event.target.blur();
 });
 
 const arena = createMatrix(10, 20);
