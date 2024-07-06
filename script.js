@@ -1,10 +1,16 @@
 const canvas = document.getElementById('tetris');
 const context = canvas.getContext('2d');
-const grid = 30;
-const tetrominoColors = {
-    1: 'red',
-    2: 'blue'
-};
+
+const grid = canvas.width / 10;
+let redValue = 255;
+let blueValue = 255;
+
+function getTetrominoColors() {
+    return {
+        1: `rgb(${redValue}, 0, 0)`,
+        2: `rgb(0, ${blueValue}, ${blueValue})`
+    };
+}
 
 context.scale(1, 1);
 
@@ -55,10 +61,11 @@ function createPiece(type) {
 }
 
 function drawMatrix(matrix, offset) {
+    const colors = getTetrominoColors();
     matrix.forEach((row, y) => {
         row.forEach((value, x) => {
             if (value !== 0) {
-                context.fillStyle = tetrominoColors[value];
+                context.fillStyle = colors[value];
                 context.fillRect((x + offset.x) * grid, (y + offset.y) * grid, grid - 1, grid - 1);
             }
         });
@@ -116,8 +123,7 @@ function createMatrix(w, h) {
 }
 
 function draw() {
-    context.fillStyle = '#000';
-    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.clearRect(0, 0, canvas.width, canvas.height);
     drawMatrix(arena, {x: 0, y: 0});
     drawMatrix(player.matrix, player.pos);
 }
@@ -217,6 +223,14 @@ document.addEventListener('keydown', event => {
             playerRotate(1);
             break;
     }
+});
+
+document.getElementById('red').addEventListener('input', (event) => {
+    redValue = event.target.value;
+});
+
+document.getElementById('blue').addEventListener('input', (event) => {
+    blueValue = event.target.value;
 });
 
 const arena = createMatrix(10, 20);
