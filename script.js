@@ -21,9 +21,9 @@ context.scale(1, 1);
 function createPiece(type) {
     if (type === 'T') {
         return [
-            [0, 0, 0],
             [1, 1, 1],
             [0, 1, 0],
+            [0, 0, 0],
         ];
     } else if (type === 'O') {
         return [
@@ -44,8 +44,8 @@ function createPiece(type) {
         ];
     } else if (type === 'I') {
         return [
-            [0, 0, 0, 0],
             [1, 1, 1, 1],
+            [0, 0, 0, 0],
             [0, 0, 0, 0],
             [0, 0, 0, 0],
         ];
