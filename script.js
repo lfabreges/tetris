@@ -1,6 +1,6 @@
 const canvas = document.getElementById('tetris');
 const context = canvas.getContext('2d');
-const grid = 20;
+const grid = 30;
 const tetrominoColors = {
     1: 'red',
     2: 'blue'
@@ -69,7 +69,7 @@ function merge(arena, player) {
     player.matrix.forEach((row, y) => {
         row.forEach((value, x) => {
             if (value !== 0) {
-                arena[y + player.pos.y][x + player.pos.x] = value;
+                arena[y + player.pos.y][x + player.pos.x] = 2;
             }
         });
     });
@@ -199,16 +199,23 @@ function update(time = 0) {
 }
 
 document.addEventListener('keydown', event => {
-    if (event.keyCode === 37) {
-        playerMove(-1);
-    } else if (event.keyCode === 39) {
-        playerMove(1);
-    } else if (event.keyCode === 40) {
-        drop();
-    } else if (event.keyCode === 81) {
-        playerRotate(-1);
-    } else if (event.keyCode === 87) {
-        playerRotate(1);
+    switch (event.key) {
+        case 'ArrowLeft':
+            playerMove(-1);
+            break;
+        case 'ArrowRight':
+            playerMove(1);
+            break;
+        case 'ArrowDown':
+            drop();
+            break;
+        case 'a':
+            playerRotate(-1);
+            break;
+        case 'z':
+        case ' ':
+            playerRotate(1);
+            break;
     }
 });
 
