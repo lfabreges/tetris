@@ -1,22 +1,44 @@
 const canvas = document.getElementById('tetris');
 const context = canvas.getContext('2d');
 
+const redElement = document.getElementById('red');
+const blueElement = document.getElementById('blue');
+const bestScoreElement = document.getElementById('bestScore');
+const scoreElement = document.getElementById('score');
+
 const grid = canvas.width / 10;
 
 let redValue = localStorage.getItem('redValue') || '154';
 let blueValue = localStorage.getItem('blueValue') || '140';
+let bestScore = localStorage.getItem('bestScore') || 0;
+let score = 0;
 
-document.getElementById('red').value = redValue;
-document.getElementById('blue').value = blueValue;
-
-function getTetrominoColors() {
-    return {
-        1: `rgb(${redValue}, 0, 0)`,
-        2: `rgb(0, ${blueValue}, ${blueValue})`
-    };
-}
+redElement.value = redValue;
+blueElement.value = blueValue;
+bestScoreElement.textContent = bestScore;
 
 context.scale(1, 1);
+
+function calculateScore(linesCleared) {
+    switch (linesCleared) {
+        case 1:
+            score += 40;
+            break;
+        case 2:
+            score += 100;
+            break;
+        case 3:
+            score += 300;
+            break;
+        case 4:
+            score += 1200;
+            break;
+        default:
+            break;
+    }
+    scoreElement.textContent = score;
+    updateSpeed();
+}
 
 function createPiece(type) {
     if (type === 'T') {
@@ -74,6 +96,13 @@ function drawMatrix(matrix, offset) {
             }
         });
     });
+}
+
+function getTetrominoColors() {
+    return {
+        1: `rgb(${redValue}, 0, 0)`,
+        2: `rgb(0, ${blueValue}, ${blueValue})`
+    };
 }
 
 function merge(arena, player) {
@@ -143,7 +172,12 @@ function drop() {
     dropCounter = 0;
 }
 
+function updateSpeed() {
+    dropInterval = Math.max(100, 1000 - Math.floor(score / 1000) * 100);
+}
+
 function arenaSweep() {
+    let rowCount = 0;
     outer: for (let y = arena.length - 1; y > 0; --y) {
         for (let x = 0; x < arena[y].length; ++x) {
             if (arena[y][x] === 0) {
@@ -154,7 +188,9 @@ function arenaSweep() {
         const row = arena.splice(y, 1)[0].fill(0);
         arena.unshift(row);
         ++y;
+        ++rowCount;
     }
+    calculateScore(rowCount);
 }
 
 function playerReset() {
@@ -165,6 +201,14 @@ function playerReset() {
                    (player.matrix[0].length / 2 | 0);
     if (collide(arena, player)) {
         arena.forEach(row => row.fill(0));
+        if (score > bestScore) {
+            bestScore = score;
+            localStorage.setItem('bestScore', bestScore);
+            bestScoreElement.textContent = bestScore;
+        }
+        score = 0;
+        scoreElement.textContent = score;
+        updateSpeed();
     }
 }
 
@@ -224,6 +268,7 @@ document.addEventListener('keydown', event => {
             break;
         case 'z':
         case ' ':
+        case 'ArrowUp':
             playerRotate(1);
             break;
         case 'p':
@@ -232,13 +277,13 @@ document.addEventListener('keydown', event => {
     }
 });
 
-document.getElementById('red').addEventListener('input', (event) => {
+redElement.addEventListener('input', (event) => {
     redValue = event.target.value;
     localStorage.setItem('redValue', redValue);
     event.target.blur();
 });
 
-document.getElementById('blue').addEventListener('input', (event) => {
+blueElement.addEventListener('input', (event) => {
     blueValue = event.target.value;
     localStorage.setItem('blueValue', blueValue)
     event.target.blur();
