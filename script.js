@@ -99,9 +99,10 @@ function drawMatrix(matrix, offset) {
 }
 
 function getTetrominoColors() {
+    const alternateColorIndex = Math.trunc(score / 150) % 2 + 1
     return {
-        1: `rgb(${redValue}, 0, 0)`,
-        2: `rgb(0, ${blueValue}, ${blueValue})`
+        [alternateColorIndex]: `rgb(${redValue}, 0, 0)`,
+        [alternateColorIndex % 2 + 1]: `rgb(0, ${blueValue}, ${blueValue})`
     };
 }
 
