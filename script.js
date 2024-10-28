@@ -279,10 +279,12 @@ document.addEventListener('keydown', event => {
     } else if (keysPressed['ArrowDown'] && player.moveDirection == 0) {
         drop();
     }
-    if (keysPressed['a']) {
-        playerRotate(-1);
-    } else if (keysPressed['z'] || keysPressed[' '] || keysPressed['ArrowUp']) {
-        playerRotate(1);
+    if (!event.repeat) {
+        if (keysPressed['a']) {
+            playerRotate(-1);
+        } else if (keysPressed['z'] || keysPressed[' '] || keysPressed['ArrowUp']) {
+            playerRotate(1);
+        }
     }
 });
 
