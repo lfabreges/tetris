@@ -92,7 +92,7 @@ function gameOver() {
 }
 
 function updateGameSpeed() {
-    terminoDropInterval = Math.max(100, 1000 - Math.floor(score / 1000) * 100);
+    terminoDropInterval = Math.max(200, 1000 - Math.floor(score / 1000) * 100);
 }
 
 function createTetrominoMatrix(type) {
