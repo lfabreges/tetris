@@ -67,7 +67,7 @@ function calculateScore(linesCleared) {
     updateSpeed();
 }
 
-function createPiece(type) {
+function createTetromino(type) {
     if (type === 'T') {
         return [
             [0, 1, 0],
@@ -231,7 +231,7 @@ function tetrominoReset() {
     tetromino.hasCollidedVertically = false;
     tetromino.type = tetrominoTypes[tetrominoTypes.length * Math.random() | 0];
     tetromino.rotationState = 0;
-    tetromino.matrix = createPiece(tetromino.type);
+    tetromino.matrix = createTetromino(tetromino.type);
     tetromino.pos.y = 0;
     tetromino.pos.x = (arena[0].length / 2 | 0) - Math.ceil(tetromino.matrix[0].length / 2);
     // TODO Laisser le check dans drop mais vérifier si la hauteur est y == 0 pour sonner la fin de la partie
