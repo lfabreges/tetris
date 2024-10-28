@@ -295,7 +295,7 @@ function draw() {
     nextTetrominoCanvasContext.clearRect(0, 0, nextTetrominoCanvas.width, nextTetrominoCanvas.height);
     drawElement(gameCanvasContext, arena, {x: 0, y: 0}, 2);
     drawElement(gameCanvasContext, tetromino.matrix, tetromino.position, 2);
-    drawElement(nextTetrominoCanvasContext, nextTetromino.matrix, {x: 1, y: 1})
+    drawElement(nextTetrominoCanvasContext, nextTetromino.matrix, {x: 0, y: 0})
 }
 
 function drawElement(canvasContext, matrix, offset, numberOfInvisibleRows = 0) {
