@@ -167,11 +167,18 @@ function drop() {
     player.pos.y++;
     if (collide(arena, player)) {
         player.pos.y--;
-        merge(arena, player);
-        playerReset();
-        arenaSweep();
+        player.hasCollided = true;
+        if (!player.isMoving) {
+            lockPiece();
+        }
     }
     dropCounter = 0;
+}
+
+function lockPiece() {
+    merge(arena, player);
+    playerReset();
+    arenaSweep();
 }
 
 function updateSpeed() {
@@ -197,10 +204,10 @@ function arenaSweep() {
 
 function playerReset() {
     const pieces = 'ILJOTSZ';
+    player.hasCollided = false;
     player.matrix = createPiece(pieces[pieces.length * Math.random() | 0]);
     player.pos.y = 0;
-    player.pos.x = (arena[0].length / 2 | 0) -
-                   (player.matrix[0].length / 2 | 0);
+    player.pos.x = (arena[0].length / 2 | 0) - (player.matrix[0].length / 2 | 0);
     if (collide(arena, player)) {
         arena.forEach(row => row.fill(0));
         if (score > bestScore) {
@@ -215,10 +222,21 @@ function playerReset() {
 }
 
 function playerMove(dir) {
+    player.isMoving = true;
     player.pos.x += dir;
     if (collide(arena, player)) {
         player.pos.x -= dir;
+        if (player.hasCollided) {
+            lockPiece();
+        }
     }
+}
+
+function playerStop() {
+    if (player.hasCollided) {
+        lockPiece();
+    }
+    player.isMoving = false;
 }
 
 function playerRotate(dir) {
@@ -279,6 +297,12 @@ document.addEventListener('keydown', event => {
     }
 });
 
+document.addEventListener('keyup', event => {
+    if (event.key == 'ArrowLeft' || event.key == 'ArrowRight') {
+        playerStop();
+    }
+});
+
 redElement.addEventListener('input', (event) => {
     redValue = event.target.value;
     localStorage.setItem('redValue', redValue);
@@ -294,8 +318,10 @@ blueElement.addEventListener('input', (event) => {
 const arena = createMatrix(10, 20);
 
 const player = {
-    pos: {x: 0, y: 0},
+    hasCollided: false,
+    isMoving: false,
     matrix: null,
+    pos: {x: 0, y: 0}
 };
 
 playerReset();
