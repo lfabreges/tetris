@@ -252,7 +252,7 @@ function update(time = 0) {
         drop();
     }
 
-    if (time - lastColorChangeTime > colorChangeInterval) {
+    while (time - lastColorChangeTime > colorChangeInterval) {
         lastColorChangeTime += colorChangeInterval;
     }
 
