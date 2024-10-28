@@ -10,7 +10,14 @@ const colorChangeInterval = 30000;
 const grid = canvas.width / 10;
 const keysPressed = {};
 
-const wallKickValues = {
+const scoreData = {
+    1: 40,
+    2: 100,
+    3: 300,
+    4: 1200
+}
+
+const wallKickData = {
     'JLSTZ': {
         '0->1': [[0, 0], [-1, 0], [-1, 1], [0, -2], [-1, -2]],
         '1->0': [[0, 0], [1, 0], [1, -1], [0, 2], [1, 2]],
@@ -37,6 +44,9 @@ let redValue = localStorage.getItem('redValue') || '154';
 let cyanValue = localStorage.getItem('cyanValue') || '140';
 let bestScore = localStorage.getItem('bestScore') || 0;
 let score = 0;
+let lastUpdateTime = 0;
+let terminoDropInterval = 1000;
+let terminoIdleTime = 0;
 
 redElement.value = redValue;
 cyanElement.value = cyanValue;
@@ -45,27 +55,47 @@ bestScoreElement.textContent = bestScore;
 context.scale(1, 1);
 
 function calculateScore(linesCleared) {
-    switch (linesCleared) {
-        case 1:
-            score += 40;
-            break;
-        case 2:
-            score += 100;
-            break;
-        case 3:
-            score += 300;
-            break;
-        case 4:
-            score += 1200;
-            break;
-        default:
-            break;
-    }
+    score += scoreData[linesCleared] || 0;
     scoreElement.textContent = score;
-    updateSpeed();
+    updateGameSpeed();
 }
 
-function createTetromino(type) {
+function clearLines() {
+    let rowCount = 0;
+    outer: for (let y = arena.length - 1; y > 0; --y) {
+        for (let x = 0; x < arena[y].length; ++x) {
+            if (arena[y][x] === 0) {
+                continue outer;
+            }
+        }
+        const row = arena.splice(y, 1)[0].fill(0);
+        arena.unshift(row);
+        ++y;
+        ++rowCount;
+    }
+    calculateScore(rowCount);
+}
+
+function gameOver() {
+    arena.forEach(row => row.fill(0));
+
+    if (score > bestScore) {
+        bestScore = score;
+        localStorage.setItem('bestScore', bestScore);
+        bestScoreElement.textContent = bestScore;
+    }
+    score = 0;
+    scoreElement.textContent = score;
+
+    updateGameSpeed();
+    newTetromino();
+}
+
+function updateGameSpeed() {
+    terminoDropInterval = Math.max(100, 1000 - Math.floor(score / 1000) * 100);
+}
+
+function createTetrominoMatrix(type) {
     if (type === 'T') {
         return [
             [0, 1, 0],
@@ -111,7 +141,143 @@ function createTetromino(type) {
     }
 }
 
-function drawMatrix(matrix, offset) {
+function dropTetromino() {
+    tetromino.position.y++;
+    if (hasTetrominoCollided()) {
+        tetromino.position.y--;
+        if (tetromino.moveDirection == 0 || tetromino.hasCollidedHorizontally) {
+            lockTetromino();
+            const firstInvisibleRowContainsTetromino = arena[1].includes(2);
+            if (firstInvisibleRowContainsTetromino) {
+                gameOver()
+            } else {
+                clearLines();
+                newTetromino();
+            }
+        } else {
+            tetromino.hasCollidedVertically = true;
+        }
+    }
+}
+
+function getTetrominoColors() {
+    const alternateColorIndex = Math.trunc(Date.now() / colorChangeInterval) % 2 + 1;
+    return {
+        [alternateColorIndex]: `rgb(${redValue}, 0, 0)`,
+        [alternateColorIndex % 2 + 1]: `rgb(0, ${cyanValue}, ${cyanValue})`
+    };
+}
+
+function hasTetrominoCollided() {
+    const [m, o] = [tetromino.matrix, tetromino.position];
+    for (let y = 0; y < m.length; ++y) {
+        for (let x = 0; x < m[y].length; ++x) {
+            if (m[y][x] !== 0 &&
+                (arena[y + o.y] && arena[y + o.y][x + o.x]) !== 0) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+function lockTetromino() {
+    tetromino.matrix.forEach((row, y) => {
+        row.forEach((value, x) => {
+            if (value !== 0) {
+                arena[y + tetromino.position.y][x + tetromino.position.x] = 2;
+            }
+        });
+    });
+}
+
+function moveTetromino(direction) {
+    tetromino.moveDirection = direction;
+    tetromino.position.x += direction;
+    if (hasTetrominoCollided()) {
+        tetromino.position.x -= direction;
+        tetromino.hasCollidedHorizontally = true;
+    } else {
+        tetromino.hasCollidedHorizontally = false;
+    }
+}
+
+function newTetromino() {
+    const tetrominoTypes = 'IOJLSTZ';
+    tetromino.hasCollidedHorizontally = false;
+    tetromino.hasCollidedVertically = false;
+    tetromino.type = tetrominoTypes[tetrominoTypes.length * Math.random() | 0];
+    tetromino.rotationState = 0;
+    tetromino.matrix = createTetrominoMatrix(tetromino.type);
+    tetromino.position = { x: (arena[0].length / 2 | 0) - Math.ceil(tetromino.matrix[0].length / 2), y: 0 };
+}
+
+function rotateTetromino(direction) {
+    if (tetromino.type == 'O') {
+        return;
+    }
+
+    const [x, y] = [tetromino.position.x, tetromino.position.y];
+    const wallKickSet = tetromino.type == 'I' ? 'I' : 'JLSTZ';
+
+    rotateMatrix(tetromino.matrix, direction);
+
+    const desiredRotationState = (tetromino.rotationState + direction) % 4;
+    const desiredRotationId = `${tetromino.rotationState}->${desiredRotationState}`;
+    const kicks = wallKickData[wallKickSet][desiredRotationId];
+
+    for (const [dx, dy] of kicks) {
+        tetromino.position.x = x + dx;
+        tetromino.position.y = y + dy;
+        if (!hasTetrominoCollided()) {
+            tetromino.rotationState = desiredRotationState;
+            return;
+        }
+    }
+
+    rotateMatrix(tetromino.matrix, -direction);
+    tetromino.position.x = x;
+    tetromino.position.y = y;
+}
+
+function stopTetromino() {
+    tetromino.moveDirection = 0;
+}
+
+function createMatrix(width, height) {
+    const matrix = [];
+    while (height--) {
+        matrix.push(new Array(width).fill(0));
+    }
+    return matrix;
+}
+
+function rotateMatrix(matrix, direction) {
+    for (let y = 0; y < matrix.length; ++y) {
+        for (let x = 0; x < y; ++x) {
+            [
+                matrix[x][y],
+                matrix[y][x],
+            ] = [
+                matrix[y][x],
+                matrix[x][y],
+            ];
+        }
+    }
+    if (direction > 0) {
+        matrix.forEach(row => row.reverse());
+    } else {
+        matrix.reverse();
+    }
+}
+
+function draw() {
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    drawElement(arena, {x: 0, y: 0});
+    drawElement(tetromino.matrix, tetromino.position);
+}
+
+function drawElement(matrix, offset) {
     const colors = getTetrominoColors();
     const numberOfInvisibleRows = 2;
     matrix.forEach((row, y) => {
@@ -125,184 +291,13 @@ function drawMatrix(matrix, offset) {
     });
 }
 
-function getTetrominoColors() {
-    const alternateColorIndex = Math.trunc(Date.now() / colorChangeInterval) % 2 + 1;
-    return {
-        [alternateColorIndex]: `rgb(${redValue}, 0, 0)`,
-        [alternateColorIndex % 2 + 1]: `rgb(0, ${cyanValue}, ${cyanValue})`
-    };
-}
-
-function merge(arena, tetromino) {
-    tetromino.matrix.forEach((row, y) => {
-        row.forEach((value, x) => {
-            if (value !== 0) {
-                arena[y + tetromino.pos.y][x + tetromino.pos.x] = 2;
-            }
-        });
-    });
-}
-
-function collide(arena, tetromino) {
-    const [m, o] = [tetromino.matrix, tetromino.pos];
-    for (let y = 0; y < m.length; ++y) {
-        for (let x = 0; x < m[y].length; ++x) {
-            if (m[y][x] !== 0 &&
-                (arena[y + o.y] && arena[y + o.y][x + o.x]) !== 0) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
-function rotate(matrix, dir) {
-    for (let y = 0; y < matrix.length; ++y) {
-        for (let x = 0; x < y; ++x) {
-            [
-                matrix[x][y],
-                matrix[y][x],
-            ] = [
-                matrix[y][x],
-                matrix[x][y],
-            ];
-        }
-    }
-    if (dir > 0) {
-        matrix.forEach(row => row.reverse());
-    } else {
-        matrix.reverse();
-    }
-}
-
-function createMatrix(w, h) {
-    const matrix = [];
-    while (h--) {
-        matrix.push(new Array(w).fill(0));
-    }
-    return matrix;
-}
-
-function draw() {
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    drawMatrix(arena, {x: 0, y: 0});
-    drawMatrix(tetromino.matrix, tetromino.pos);
-}
-
-function drop() {
-    tetromino.pos.y++;
-    if (collide(arena, tetromino)) {
-        tetromino.pos.y--;
-        if (tetromino.moveDirection == 0 || tetromino.hasCollidedHorizontally) {
-            merge(arena, tetromino);
-            if (arena[1].includes(2)) {
-                arena.forEach(row => row.fill(0));
-                if (score > bestScore) {
-                    bestScore = score;
-                    localStorage.setItem('bestScore', bestScore);
-                    bestScoreElement.textContent = bestScore;
-                }
-                score = 0;
-                scoreElement.textContent = score;
-                updateSpeed();
-            } else {
-                arenaSweep();
-            }
-            tetrominoReset();
-        } else {
-            tetromino.hasCollidedVertically = true;
-        }
-    }
-    dropCounter = 0;
-}
-
-function updateSpeed() {
-    dropInterval = Math.max(100, 1000 - Math.floor(score / 1000) * 100);
-}
-
-function arenaSweep() {
-    let rowCount = 0;
-    outer: for (let y = arena.length - 1; y > 0; --y) {
-        for (let x = 0; x < arena[y].length; ++x) {
-            if (arena[y][x] === 0) {
-                continue outer;
-            }
-        }
-
-        const row = arena.splice(y, 1)[0].fill(0);
-        arena.unshift(row);
-        ++y;
-        ++rowCount;
-    }
-    calculateScore(rowCount);
-}
-
-function tetrominoReset() {
-    const tetrominoTypes = 'IOJLSTZ';
-    tetromino.hasCollidedHorizontally = false;
-    tetromino.hasCollidedVertically = false;
-    tetromino.type = tetrominoTypes[tetrominoTypes.length * Math.random() | 0];
-    tetromino.rotationState = 0;
-    tetromino.matrix = createTetromino(tetromino.type);
-    tetromino.pos.y = 0;
-    tetromino.pos.x = (arena[0].length / 2 | 0) - Math.ceil(tetromino.matrix[0].length / 2);
-}
-
-function tetrominoMove(dir) {
-    tetromino.moveDirection = dir;
-    tetromino.pos.x += dir;
-    if (collide(arena, tetromino)) {
-        tetromino.pos.x -= dir;
-        tetromino.hasCollidedHorizontally = true;
-    } else {
-        tetromino.hasCollidedHorizontally = false;
-    }
-}
-
-function tetrominoStop() {
-    tetromino.moveDirection = 0;
-}
-
-function tetrominoRotate(dir) {
-    if (tetromino.type == 'O') {
-        return;
-    }
-
-    const [x, y] = [tetromino.pos.x, tetromino.pos.y];
-    const wallKickSet = tetromino.type == 'I' ? 'I' : 'JLSTZ';
-
-    rotate(tetromino.matrix, dir);
-
-    const desiredRotationState = (tetromino.rotationState + dir) % 4;
-    const desiredRotationId = `${tetromino.rotationState}->${desiredRotationState}`;
-    const kicks = wallKickValues[wallKickSet][desiredRotationId];
-
-    for (const [dx, dy] of kicks) {
-        tetromino.pos.x = x + dx;
-        tetromino.pos.y = y + dy;
-        if (!collide(arena, tetromino)) {
-            tetromino.rotationState = desiredRotationState;
-            return;
-        }
-    }
-
-    rotate(tetromino.matrix, -dir);
-    tetromino.pos.x = x;
-    tetromino.pos.y = y;
-}
-
-let dropCounter = 0;
-let dropInterval = 1000;
-
-let lastTime = 0;
-
 function update(time = 0) {
-    const deltaTime = time - lastTime;
-    lastTime = time;
+    terminoIdleTime += time - lastUpdateTime;
+    lastUpdateTime = time;
 
-    dropCounter += deltaTime;
-    if (dropCounter > dropInterval) {
-        drop();
+    if (terminoIdleTime > terminoDropInterval) {
+        dropTetromino();
+        terminoIdleTime = terminoIdleTime % terminoDropInterval;
     }
 
     draw();
@@ -314,17 +309,18 @@ document.addEventListener('keydown', event => {
         keysPressed[event.key] = true;
     }
     if (keysPressed['ArrowLeft'] && tetromino.moveDirection != 1) {
-        tetrominoMove(-1);
+        moveTetromino(-1);
     } else if (keysPressed['ArrowRight'] && tetromino.moveDirection != -1) {
-        tetrominoMove(1);
+        moveTetromino(1);
     } else if (keysPressed['ArrowDown'] && tetromino.moveDirection == 0) {
-        drop();
+        dropTetromino();
+        terminoIdleTime = 0;
     }
     if (!event.repeat) {
         if (keysPressed['a']) {
-            tetrominoRotate(-1);
+            rotateTetromino(-1);
         } else if (keysPressed['z'] || keysPressed[' '] || keysPressed['ArrowUp']) {
-            tetrominoRotate(1);
+            rotateTetromino(1);
         }
     }
 });
@@ -334,9 +330,9 @@ document.addEventListener('keyup', event => {
         delete keysPressed[event.key];
     }
     if (event.key == 'ArrowLeft' && tetromino.moveDirection == -1) {
-        tetrominoStop();
+        stopTetromino();
     } else if (event.key == 'ArrowRight' && tetromino.moveDirection == 1) {
-        tetrominoStop();
+        stopTetromino();
     }
 });
 
@@ -353,16 +349,7 @@ cyanElement.addEventListener('input', (event) => {
 });
 
 const arena = createMatrix(10, 22);
+const tetromino = { moveDirection: 0 };
 
-const tetromino = {
-    hasCollidedHorizontally: false,
-    hasCollidedVertically: false,
-    matrix: null,
-    moveDirection: 0,
-    pos: {x: 0, y: 0},
-    rotationState: 0,
-    type: ""
-};
-
-tetrominoReset();
+newTetromino();
 update();
