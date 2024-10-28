@@ -1,15 +1,16 @@
-const canvas = document.getElementById('tetris');
-const context = canvas.getContext('2d');
-const redElement = document.getElementById('red');
-const cyanElement = document.getElementById('cyan');
 const bestScoreElement = document.getElementById('bestScore');
+const cyanElement = document.getElementById('cyan');
+const gameCanvas = document.getElementById('tetris');
+const gameCanvasContext = gameCanvas.getContext('2d');
+const nextTetrominoCanvas = document.getElementById('next-tetromino');
+const nextTetrominoCanvasContext = nextTetrominoCanvas.getContext('2d');
+const redElement = document.getElementById('red');
 const scoreElement = document.getElementById('score');
 
 const arena = createMatrix(10, 22);
 const colorChangeInterval = 30000;
-const grid = canvas.width / 10;
+const grid = gameCanvas.width / 10;
 const keysPressed = {};
-const tetromino = { moveDirection: 0 };
 
 const scoreData = {
     1: 40,
@@ -44,8 +45,12 @@ const wallKickData = {
 let redValue = localStorage.getItem('redValue') || '154';
 let cyanValue = localStorage.getItem('cyanValue') || '140';
 let bestScore = localStorage.getItem('bestScore') || 0;
-let score = 0;
+
 let lastUpdateTime = 0;
+let moveDirection = 0;
+let nextTetromino = null;
+let score = 0;
+let tetromino = null;
 let terminoDropInterval = 1000;
 let terminoIdleTime = 0;
 
@@ -53,7 +58,8 @@ redElement.value = redValue;
 cyanElement.value = cyanValue;
 bestScoreElement.textContent = bestScore;
 
-context.scale(1, 1);
+gameCanvasContext.scale(1, 1);
+nextTetrominoCanvasContext.scale(1, 1);
 
 newTetromino();
 update();
@@ -153,7 +159,7 @@ function dropTetromino() {
     tetromino.position.y++;
     if (hasTetrominoCollided()) {
         tetromino.position.y--;
-        if (tetromino.moveDirection == 0 || tetromino.hasCollidedHorizontally) {
+        if (moveDirection == 0 || tetromino.hasCollidedHorizontally) {
             lockTetromino();
             const firstInvisibleRowContainsTetromino = arena[1].includes(2);
             if (firstInvisibleRowContainsTetromino) {
@@ -200,7 +206,7 @@ function lockTetromino() {
 }
 
 function moveTetromino(direction) {
-    tetromino.moveDirection = direction;
+    moveDirection = direction;
     tetromino.position.x += direction;
     if (hasTetrominoCollided()) {
         tetromino.position.x -= direction;
@@ -211,13 +217,22 @@ function moveTetromino(direction) {
 }
 
 function newTetromino() {
-    const tetrominoTypes = 'IOJLSTZ';
-    tetromino.hasCollidedHorizontally = false;
-    tetromino.hasCollidedVertically = false;
-    tetromino.type = tetrominoTypes[tetrominoTypes.length * Math.random() | 0];
-    tetromino.rotationState = 0;
-    tetromino.matrix = createTetrominoMatrix(tetromino.type);
-    tetromino.position = { x: (arena[0].length / 2 | 0) - Math.ceil(tetromino.matrix[0].length / 2), y: 0 };
+    const _tetromino = {}
+
+    _tetromino.hasCollidedHorizontally = false;
+    _tetromino.hasCollidedVertically = false;
+    _tetromino.type = 'IOJLSTZ'[7 * Math.random() | 0];
+    _tetromino.rotationState = 0;
+    _tetromino.matrix = createTetrominoMatrix(_tetromino.type);
+    _tetromino.position = {x: (arena[0].length / 2 | 0) - Math.ceil(_tetromino.matrix[0].length / 2), y: 0};
+
+    if (nextTetromino == null) {
+        nextTetromino = _tetromino;
+        newTetromino();
+    } else {
+        tetromino = nextTetromino;
+        nextTetromino = _tetromino;
+    }
 }
 
 function rotateTetromino(direction) {
@@ -248,10 +263,6 @@ function rotateTetromino(direction) {
     tetromino.position.y = y;
 }
 
-function stopTetromino() {
-    tetromino.moveDirection = 0;
-}
-
 function createMatrix(width, height) {
     const matrix = [];
     while (height--) {
@@ -280,20 +291,21 @@ function rotateMatrix(matrix, direction) {
 }
 
 function draw() {
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    drawElement(arena, {x: 0, y: 0});
-    drawElement(tetromino.matrix, tetromino.position);
+    gameCanvasContext.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+    nextTetrominoCanvasContext.clearRect(0, 0, nextTetrominoCanvas.width, nextTetrominoCanvas.height);
+    drawElement(gameCanvasContext, arena, {x: 0, y: 0}, 2);
+    drawElement(gameCanvasContext, tetromino.matrix, tetromino.position, 2);
+    drawElement(nextTetrominoCanvasContext, nextTetromino.matrix, {x: 1, y: 1})
 }
 
-function drawElement(matrix, offset) {
+function drawElement(canvasContext, matrix, offset, numberOfInvisibleRows = 0) {
     const colors = getTetrominoColors();
-    const numberOfInvisibleRows = 2;
     matrix.forEach((row, y) => {
         row.forEach((value, x) => {
             const ajustedY = y + offset.y - numberOfInvisibleRows;
             if (value !== 0 && ajustedY >= 0) {
-                context.fillStyle = colors[value];
-                context.fillRect((x + offset.x) * grid, ajustedY * grid, grid - 1, grid - 1);
+                canvasContext.fillStyle = colors[value];
+                canvasContext.fillRect((x + offset.x) * grid, ajustedY * grid, grid - 1, grid - 1);
             }
         });
     });
@@ -320,11 +332,11 @@ document.addEventListener('keydown', event => {
     if (!event.repeat) {
         keysPressed[event.key] = true;
     }
-    if (keysPressed['ArrowLeft'] && tetromino.moveDirection != 1) {
+    if (keysPressed['ArrowLeft'] && moveDirection != 1) {
         moveTetromino(-1);
-    } else if (keysPressed['ArrowRight'] && tetromino.moveDirection != -1) {
+    } else if (keysPressed['ArrowRight'] && moveDirection != -1) {
         moveTetromino(1);
-    } else if (keysPressed['ArrowDown'] && tetromino.moveDirection == 0) {
+    } else if (keysPressed['ArrowDown'] && moveDirection == 0) {
         dropTetromino();
         terminoIdleTime = 0;
     }
@@ -341,10 +353,8 @@ document.addEventListener('keyup', event => {
     if (!event.repeat) {
         delete keysPressed[event.key];
     }
-    if (event.key == 'ArrowLeft' && tetromino.moveDirection == -1) {
-        stopTetromino();
-    } else if (event.key == 'ArrowRight' && tetromino.moveDirection == 1) {
-        stopTetromino();
+    if ((event.key == 'ArrowLeft' && moveDirection == -1) || (event.key == 'ArrowRight' && moveDirection == 1)) {
+        moveDirection = 0;
     }
 });
 
