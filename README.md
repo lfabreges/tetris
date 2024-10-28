@@ -21,7 +21,7 @@ Ce jeu n'est pas un dispositif médical et est destiné uniquement à un usage e
 1. **Consultez un professionnel de la vision** : En cas d’amblyopie ou de toute autre condition visuelle, assurez-vous de consulter un ophtalmologiste pour vérifier si cet entraînement est approprié.
 2. **Attention aux symptômes** : Si vous ressentez des maux de tête, une vision double ou tout autre inconfort, arrêtez de jouer immédiatement.
 3. **Pauses fréquentes** : Pour une utilisation prolongée, faites une pause de 5 minutes toutes les 15 minutes.
-4. **Calibrage des couleurs** : Le calibrage des couleurs peut être effectué directement sur la page du jeu. Fermez l’œil derrière le filtre bleu des lunettes ; vous devriez voir uniquement les pièces bleues. Faites de même avec le filtre rouge pour voir uniquement les pièces rouges. Si ce n’est pas le cas, ajustez le calibrage.
+4. **Calibrage des couleurs** : Le calibrage des couleurs peut être effectué directement sur la page du jeu. Fermez l’œil derrière le filtre cyan des lunettes ; vous devriez voir uniquement les pièces cyans. Faites de même avec le filtre rouge pour voir uniquement les pièces rouges. Si ce n’est pas le cas, ajustez le calibrage.
 
 ## Contexte
 

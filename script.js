@@ -2,7 +2,7 @@ const canvas = document.getElementById('tetris');
 const context = canvas.getContext('2d');
 
 const redElement = document.getElementById('red');
-const blueElement = document.getElementById('blue');
+const cyanElement = document.getElementById('cyan');
 const bestScoreElement = document.getElementById('bestScore');
 const scoreElement = document.getElementById('score');
 
@@ -11,12 +11,12 @@ const grid = canvas.width / 10;
 const keysPressed = {};
 
 let redValue = localStorage.getItem('redValue') || '154';
-let blueValue = localStorage.getItem('blueValue') || '140';
+let cyanValue = localStorage.getItem('cyanValue') || '140';
 let bestScore = localStorage.getItem('bestScore') || 0;
 let score = 0;
 
 redElement.value = redValue;
-blueElement.value = blueValue;
+cyanElement.value = cyanValue;
 bestScoreElement.textContent = bestScore;
 
 context.scale(1, 1);
@@ -104,7 +104,7 @@ function getTetrominoColors() {
     const alternateColorIndex = Math.trunc(Date.now() / colorChangeInterval) % 2 + 1;
     return {
         [alternateColorIndex]: `rgb(${redValue}, 0, 0)`,
-        [alternateColorIndex % 2 + 1]: `rgb(0, ${blueValue}, ${blueValue})`
+        [alternateColorIndex % 2 + 1]: `rgb(0, ${cyanValue}, ${cyanValue})`
     };
 }
 
@@ -305,9 +305,9 @@ redElement.addEventListener('input', (event) => {
     event.target.blur();
 });
 
-blueElement.addEventListener('input', (event) => {
-    blueValue = event.target.value;
-    localStorage.setItem('blueValue', blueValue)
+cyanElement.addEventListener('input', (event) => {
+    cyanValue = event.target.value;
+    localStorage.setItem('cyanValue', cyanValue)
     event.target.blur();
 });
 
