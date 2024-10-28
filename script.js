@@ -6,14 +6,13 @@ const blueElement = document.getElementById('blue');
 const bestScoreElement = document.getElementById('bestScore');
 const scoreElement = document.getElementById('score');
 
+const colorChangeInterval = 30000;
 const grid = canvas.width / 10;
 
 let redValue = localStorage.getItem('redValue') || '154';
 let blueValue = localStorage.getItem('blueValue') || '140';
 let bestScore = localStorage.getItem('bestScore') || 0;
 let score = 0;
-let colorChangeInterval = 30000;
-let lastColorChangeTime = 0;
 
 redElement.value = redValue;
 blueElement.value = blueValue;
@@ -101,8 +100,7 @@ function drawMatrix(matrix, offset) {
 }
 
 function getTetrominoColors() {
-    const currentTime = Date.now();
-    const alternateColorIndex = Math.trunc((currentTime - lastColorChangeTime) / colorChangeInterval) % 2 + 1;
+    const alternateColorIndex = Math.trunc(Date.now() / colorChangeInterval) % 2 + 1;
     return {
         [alternateColorIndex]: `rgb(${redValue}, 0, 0)`,
         [alternateColorIndex % 2 + 1]: `rgb(0, ${blueValue}, ${blueValue})`
@@ -250,10 +248,6 @@ function update(time = 0) {
     dropCounter += deltaTime;
     if (dropCounter > dropInterval) {
         drop();
-    }
-
-    while (time - lastColorChangeTime > colorChangeInterval) {
-        lastColorChangeTime += colorChangeInterval;
     }
 
     draw();
