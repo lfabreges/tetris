@@ -1,4 +1,4 @@
-# Tetris anaglyphe - entraînement visuel avec tetris en mode dichoptique
+# Tetris anaglyphe - entraînement visuel
 
 **Tetris anaglyphe** est un jeu Tetris expérimental en JavaScript conçu pour exercer la vision binoculaire en utilisant des **lunettes anaglyphes** (rouge et cyan). Grâce à ce mode dichoptique, les pièces tombantes et les pièces déjà posées apparaissent dans des couleurs distinctes visibles respectivement par chaque œil, offrant une expérience visuelle unique qui encourage une meilleure coopération entre les yeux. Ce jeu peut être particulièrement bénéfique pour les personnes avec un déséquilibre visuel.
 
