@@ -1,14 +1,15 @@
 const canvas = document.getElementById('tetris');
 const context = canvas.getContext('2d');
-
 const redElement = document.getElementById('red');
 const cyanElement = document.getElementById('cyan');
 const bestScoreElement = document.getElementById('bestScore');
 const scoreElement = document.getElementById('score');
 
+const arena = createMatrix(10, 22);
 const colorChangeInterval = 30000;
 const grid = canvas.width / 10;
 const keysPressed = {};
+const tetromino = { moveDirection: 0 };
 
 const scoreData = {
     1: 40,
@@ -53,6 +54,13 @@ cyanElement.value = cyanValue;
 bestScoreElement.textContent = bestScore;
 
 context.scale(1, 1);
+
+newTetromino();
+update();
+
+/*
+ * Functions
+ */
 
 function calculateScore(linesCleared) {
     score += scoreData[linesCleared] || 0;
@@ -304,6 +312,10 @@ function update(time = 0) {
     requestAnimationFrame(update);
 }
 
+/*
+ * Event Listeners
+ */
+
 document.addEventListener('keydown', event => {
     if (!event.repeat) {
         keysPressed[event.key] = true;
@@ -347,9 +359,3 @@ cyanElement.addEventListener('input', (event) => {
     localStorage.setItem('cyanValue', cyanValue)
     event.target.blur();
 });
-
-const arena = createMatrix(10, 22);
-const tetromino = { moveDirection: 0 };
-
-newTetromino();
-update();
