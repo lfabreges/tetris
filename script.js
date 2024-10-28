@@ -8,6 +8,7 @@ const scoreElement = document.getElementById('score');
 
 const colorChangeInterval = 30000;
 const grid = canvas.width / 10;
+const keysPressed = {};
 
 let redValue = localStorage.getItem('redValue') || '154';
 let blueValue = localStorage.getItem('blueValue') || '140';
@@ -167,18 +168,15 @@ function drop() {
     player.pos.y++;
     if (collide(arena, player)) {
         player.pos.y--;
-        player.hasCollided = true;
-        if (!player.isMoving) {
-            lockPiece();
+        if (player.moveDirection == 0 || player.hasCollidedHorizontally) {
+            merge(arena, player);
+            playerReset();
+            arenaSweep();
+        } else {
+            player.hasCollidedVertically = true;
         }
     }
     dropCounter = 0;
-}
-
-function lockPiece() {
-    merge(arena, player);
-    playerReset();
-    arenaSweep();
 }
 
 function updateSpeed() {
@@ -204,7 +202,8 @@ function arenaSweep() {
 
 function playerReset() {
     const pieces = 'ILJOTSZ';
-    player.hasCollided = false;
+    player.hasCollidedHorizontally = false;
+    player.hasCollidedVertically = false;
     player.matrix = createPiece(pieces[pieces.length * Math.random() | 0]);
     player.pos.y = 0;
     player.pos.x = (arena[0].length / 2 | 0) - (player.matrix[0].length / 2 | 0);
@@ -222,21 +221,18 @@ function playerReset() {
 }
 
 function playerMove(dir) {
-    player.isMoving = true;
+    player.moveDirection = dir;
     player.pos.x += dir;
     if (collide(arena, player)) {
         player.pos.x -= dir;
-        if (player.hasCollided) {
-            lockPiece();
-        }
+        player.hasCollidedHorizontally = true;
+    } else {
+        player.hasCollidedHorizontally = false;
     }
 }
 
 function playerStop() {
-    if (player.hasCollided) {
-        lockPiece();
-    }
-    player.isMoving = false;
+    player.moveDirection = 0;
 }
 
 function playerRotate(dir) {
@@ -273,32 +269,30 @@ function update(time = 0) {
 }
 
 document.addEventListener('keydown', event => {
-    switch (event.key) {
-        case 'ArrowLeft':
-            playerMove(-1);
-            break;
-        case 'ArrowRight':
-            playerMove(1);
-            break;
-        case 'ArrowDown':
-            drop();
-            break;
-        case 'a':
-            playerRotate(-1);
-            break;
-        case 'z':
-        case ' ':
-        case 'ArrowUp':
-            playerRotate(1);
-            break;
-        case 'p':
-            alert("Rouge : " + redValue + " - Bleu : " + blueValue);
-            break;
+    if (!event.repeat) {
+        keysPressed[event.key] = true;
+    }
+    if (keysPressed['ArrowLeft'] && player.moveDirection != 1) {
+        playerMove(-1);
+    } else if (keysPressed['ArrowRight'] && player.moveDirection != -1) {
+        playerMove(1);
+    } else if (keysPressed['ArrowDown'] && player.moveDirection == 0) {
+        drop();
+    }
+    if (keysPressed['a']) {
+        playerRotate(-1);
+    } else if (keysPressed['z'] || keysPressed[' '] || keysPressed['ArrowUp']) {
+        playerRotate(1);
     }
 });
 
 document.addEventListener('keyup', event => {
-    if (event.key == 'ArrowLeft' || event.key == 'ArrowRight') {
+    if (!event.repeat) {
+        delete keysPressed[event.key];
+    }
+    if (event.key == 'ArrowLeft' && player.moveDirection == -1) {
+        playerStop();
+    } else if (event.key == 'ArrowRight' && player.moveDirection == 1) {
         playerStop();
     }
 });
@@ -318,9 +312,10 @@ blueElement.addEventListener('input', (event) => {
 const arena = createMatrix(10, 20);
 
 const player = {
-    hasCollided: false,
-    isMoving: false,
+    hasCollidedHorizontally: false,
+    hasCollidedVertically: false,
     matrix: null,
+    moveDirection: 0,
     pos: {x: 0, y: 0}
 };
 
