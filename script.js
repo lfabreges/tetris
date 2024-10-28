@@ -42,8 +42,6 @@ redElement.value = redValue;
 cyanElement.value = cyanValue;
 bestScoreElement.textContent = bestScore;
 
-// TODO Faire apparaitre les pièces en ligne 21/22, un cran au dessus (mais invisible de l'utilsiateur)
-
 context.scale(1, 1);
 
 function calculateScore(linesCleared) {
@@ -115,11 +113,13 @@ function createTetromino(type) {
 
 function drawMatrix(matrix, offset) {
     const colors = getTetrominoColors();
+    const numberOfInvisibleRows = 2;
     matrix.forEach((row, y) => {
         row.forEach((value, x) => {
-            if (value !== 0) {
+            const ajustedY = y + offset.y - numberOfInvisibleRows;
+            if (value !== 0 && ajustedY >= 0) {
                 context.fillStyle = colors[value];
-                context.fillRect((x + offset.x) * grid, (y + offset.y) * grid, grid - 1, grid - 1);
+                context.fillRect((x + offset.x) * grid, ajustedY * grid, grid - 1, grid - 1);
             }
         });
     });
@@ -352,7 +352,7 @@ cyanElement.addEventListener('input', (event) => {
     event.target.blur();
 });
 
-const arena = createMatrix(10, 20);
+const arena = createMatrix(10, 22);
 
 const tetromino = {
     hasCollidedHorizontally: false,
