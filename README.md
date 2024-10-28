@@ -4,7 +4,9 @@
 
 ## Jouer maintenant
 
-Pour jouer, rendez-vous simplement sur [https://lfabreges.github.io/tetris/](https://lfabreges.github.io/tetris/) depuis un ordinateur ou un appareil mobile compatible avec JavaScript.
+Pour jouer, rendez-vous simplement sur [https://lfabreges.github.io/tetris/](https://lfabreges.github.io/tetris/)
+
+**Remarque** : Ce jeu nécessite un clavier pour fonctionner.
 
 ## Fonctionnalités
 
