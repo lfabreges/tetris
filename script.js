@@ -195,8 +195,20 @@ function drop() {
         tetromino.pos.y--;
         if (tetromino.moveDirection == 0 || tetromino.hasCollidedHorizontally) {
             merge(arena, tetromino);
+            if (arena[1].includes(2)) {
+                arena.forEach(row => row.fill(0));
+                if (score > bestScore) {
+                    bestScore = score;
+                    localStorage.setItem('bestScore', bestScore);
+                    bestScoreElement.textContent = bestScore;
+                }
+                score = 0;
+                scoreElement.textContent = score;
+                updateSpeed();
+            } else {
+                arenaSweep();
+            }
             tetrominoReset();
-            arenaSweep();
         } else {
             tetromino.hasCollidedVertically = true;
         }
@@ -234,18 +246,6 @@ function tetrominoReset() {
     tetromino.matrix = createTetromino(tetromino.type);
     tetromino.pos.y = 0;
     tetromino.pos.x = (arena[0].length / 2 | 0) - Math.ceil(tetromino.matrix[0].length / 2);
-    // TODO Laisser le check dans drop mais vérifier si la hauteur est y == 0 pour sonner la fin de la partie
-    if (collide(arena, tetromino)) {
-        arena.forEach(row => row.fill(0));
-        if (score > bestScore) {
-            bestScore = score;
-            localStorage.setItem('bestScore', bestScore);
-            bestScoreElement.textContent = bestScore;
-        }
-        score = 0;
-        scoreElement.textContent = score;
-        updateSpeed();
-    }
 }
 
 function tetrominoMove(dir) {
