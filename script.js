@@ -10,6 +10,29 @@ const colorChangeInterval = 30000;
 const grid = canvas.width / 10;
 const keysPressed = {};
 
+const wallKickValues = {
+    'JLSTZ': {
+        '0->1': [[0, 0], [-1, 0], [-1, 1], [0, -2], [-1, -2]],
+        '1->0': [[0, 0], [1, 0], [1, -1], [0, 2], [1, 2]],
+        '1->2': [[0, 0], [1, 0], [1, -1], [0, 2], [1, 2]],
+        '2->1': [[0, 0], [-1, 0], [-1, 1], [0, -2], [-1, -2]],
+        '2->3': [[0, 0], [1, 0], [1, 1], [0, -2], [1, -2]],
+        '3->2': [[0, 0], [-1, 0], [-1, -1], [0, 2], [-1, 2]],
+        '3->0': [[0, 0], [-1, 0], [-1, -1], [0, 2], [-1, 2]],
+        '0->3': [[0, 0], [1, 0], [1, 1], [0, -2], [1, -2]]
+    },
+    'I': {
+        '0->1': [[0, 0], [-2, 0], [1, 0], [-2, -1], [1, 2]],
+        '1->0': [[0, 0], [2, 0], [-1, 0], [2, 1], [-1, -2]],
+        '1->2': [[0, 0], [-1, 0], [2, 0], [-1, 2], [2, -1]],
+        '2->1': [[0, 0], [1, 0], [-2, 0], [1, -2], [-2, 1]],
+        '2->3': [[0, 0], [2, 0], [-1, 0], [2, 1], [-1, -2]],
+        '3->2': [[0, 0], [-2, 0], [1, 0], [-2, -1], [1, 2]],
+        '3->0': [[0, 0], [1, 0], [-2, 0], [1, -2], [-2, 1]],
+        '0->3': [[0, 0], [-1, 0], [2, 0], [-1, 2], [2, -1]]
+    }
+};
+
 let redValue = localStorage.getItem('redValue') || '154';
 let cyanValue = localStorage.getItem('cyanValue') || '140';
 let bestScore = localStorage.getItem('bestScore') || 0;
@@ -18,6 +41,8 @@ let score = 0;
 redElement.value = redValue;
 cyanElement.value = cyanValue;
 bestScoreElement.textContent = bestScore;
+
+// TODO Faire apparaitre les pièces en ligne 21/22, un cran au dessus (mais invisible de l'utilsiateur)
 
 context.scale(1, 1);
 
@@ -45,8 +70,8 @@ function calculateScore(linesCleared) {
 function createPiece(type) {
     if (type === 'T') {
         return [
-            [1, 1, 1],
             [0, 1, 0],
+            [1, 1, 1],
             [0, 0, 0],
         ];
     } else if (type === 'O') {
@@ -68,10 +93,10 @@ function createPiece(type) {
         ];
     } else if (type === 'I') {
         return [
+            [0, 0, 0, 0],
             [1, 1, 1, 1],
             [0, 0, 0, 0],
-            [0, 0, 0, 0],
-            [0, 0, 0, 0],
+            [0, 0, 0, 0]
         ];
     } else if (type === 'S') {
         return [
@@ -108,18 +133,18 @@ function getTetrominoColors() {
     };
 }
 
-function merge(arena, player) {
-    player.matrix.forEach((row, y) => {
+function merge(arena, tetromino) {
+    tetromino.matrix.forEach((row, y) => {
         row.forEach((value, x) => {
             if (value !== 0) {
-                arena[y + player.pos.y][x + player.pos.x] = 2;
+                arena[y + tetromino.pos.y][x + tetromino.pos.x] = 2;
             }
         });
     });
 }
 
-function collide(arena, player) {
-    const [m, o] = [player.matrix, player.pos];
+function collide(arena, tetromino) {
+    const [m, o] = [tetromino.matrix, tetromino.pos];
     for (let y = 0; y < m.length; ++y) {
         for (let x = 0; x < m[y].length; ++x) {
             if (m[y][x] !== 0 &&
@@ -161,19 +186,19 @@ function createMatrix(w, h) {
 function draw() {
     context.clearRect(0, 0, canvas.width, canvas.height);
     drawMatrix(arena, {x: 0, y: 0});
-    drawMatrix(player.matrix, player.pos);
+    drawMatrix(tetromino.matrix, tetromino.pos);
 }
 
 function drop() {
-    player.pos.y++;
-    if (collide(arena, player)) {
-        player.pos.y--;
-        if (player.moveDirection == 0 || player.hasCollidedHorizontally) {
-            merge(arena, player);
-            playerReset();
+    tetromino.pos.y++;
+    if (collide(arena, tetromino)) {
+        tetromino.pos.y--;
+        if (tetromino.moveDirection == 0 || tetromino.hasCollidedHorizontally) {
+            merge(arena, tetromino);
+            tetrominoReset();
             arenaSweep();
         } else {
-            player.hasCollidedVertically = true;
+            tetromino.hasCollidedVertically = true;
         }
     }
     dropCounter = 0;
@@ -200,14 +225,17 @@ function arenaSweep() {
     calculateScore(rowCount);
 }
 
-function playerReset() {
-    const pieces = 'ILJOTSZ';
-    player.hasCollidedHorizontally = false;
-    player.hasCollidedVertically = false;
-    player.matrix = createPiece(pieces[pieces.length * Math.random() | 0]);
-    player.pos.y = 0;
-    player.pos.x = (arena[0].length / 2 | 0) - (player.matrix[0].length / 2 | 0);
-    if (collide(arena, player)) {
+function tetrominoReset() {
+    const tetrominoTypes = 'IOJLSTZ';
+    tetromino.hasCollidedHorizontally = false;
+    tetromino.hasCollidedVertically = false;
+    tetromino.type = tetrominoTypes[tetrominoTypes.length * Math.random() | 0];
+    tetromino.rotationState = 0;
+    tetromino.matrix = createPiece(tetromino.type);
+    tetromino.pos.y = 0;
+    tetromino.pos.x = (arena[0].length / 2 | 0) - Math.ceil(tetromino.matrix[0].length / 2);
+    // TODO Laisser le check dans drop mais vérifier si la hauteur est y == 0 pour sonner la fin de la partie
+    if (collide(arena, tetromino)) {
         arena.forEach(row => row.fill(0));
         if (score > bestScore) {
             bestScore = score;
@@ -220,34 +248,47 @@ function playerReset() {
     }
 }
 
-function playerMove(dir) {
-    player.moveDirection = dir;
-    player.pos.x += dir;
-    if (collide(arena, player)) {
-        player.pos.x -= dir;
-        player.hasCollidedHorizontally = true;
+function tetrominoMove(dir) {
+    tetromino.moveDirection = dir;
+    tetromino.pos.x += dir;
+    if (collide(arena, tetromino)) {
+        tetromino.pos.x -= dir;
+        tetromino.hasCollidedHorizontally = true;
     } else {
-        player.hasCollidedHorizontally = false;
+        tetromino.hasCollidedHorizontally = false;
     }
 }
 
-function playerStop() {
-    player.moveDirection = 0;
+function tetrominoStop() {
+    tetromino.moveDirection = 0;
 }
 
-function playerRotate(dir) {
-    const pos = player.pos.x;
-    let offset = 1;
-    rotate(player.matrix, dir);
-    while (collide(arena, player)) {
-        player.pos.x += offset;
-        offset = -(offset + (offset > 0 ? 1 : -1));
-        if (offset > player.matrix[0].length) {
-            rotate(player.matrix, -dir);
-            player.pos.x = pos;
+function tetrominoRotate(dir) {
+    if (tetromino.type == 'O') {
+        return;
+    }
+
+    const [x, y] = [tetromino.pos.x, tetromino.pos.y];
+    const wallKickSet = tetromino.type == 'I' ? 'I' : 'JLSTZ';
+
+    rotate(tetromino.matrix, dir);
+
+    const desiredRotationState = (tetromino.rotationState + dir) % 4;
+    const desiredRotationId = `${tetromino.rotationState}->${desiredRotationState}`;
+    const kicks = wallKickValues[wallKickSet][desiredRotationId];
+
+    for (const [dx, dy] of kicks) {
+        tetromino.pos.x = x + dx;
+        tetromino.pos.y = y + dy;
+        if (!collide(arena, tetromino)) {
+            tetromino.rotationState = desiredRotationState;
             return;
         }
     }
+
+    rotate(tetromino.matrix, -dir);
+    tetromino.pos.x = x;
+    tetromino.pos.y = y;
 }
 
 let dropCounter = 0;
@@ -272,18 +313,18 @@ document.addEventListener('keydown', event => {
     if (!event.repeat) {
         keysPressed[event.key] = true;
     }
-    if (keysPressed['ArrowLeft'] && player.moveDirection != 1) {
-        playerMove(-1);
-    } else if (keysPressed['ArrowRight'] && player.moveDirection != -1) {
-        playerMove(1);
-    } else if (keysPressed['ArrowDown'] && player.moveDirection == 0) {
+    if (keysPressed['ArrowLeft'] && tetromino.moveDirection != 1) {
+        tetrominoMove(-1);
+    } else if (keysPressed['ArrowRight'] && tetromino.moveDirection != -1) {
+        tetrominoMove(1);
+    } else if (keysPressed['ArrowDown'] && tetromino.moveDirection == 0) {
         drop();
     }
     if (!event.repeat) {
         if (keysPressed['a']) {
-            playerRotate(-1);
+            tetrominoRotate(-1);
         } else if (keysPressed['z'] || keysPressed[' '] || keysPressed['ArrowUp']) {
-            playerRotate(1);
+            tetrominoRotate(1);
         }
     }
 });
@@ -292,10 +333,10 @@ document.addEventListener('keyup', event => {
     if (!event.repeat) {
         delete keysPressed[event.key];
     }
-    if (event.key == 'ArrowLeft' && player.moveDirection == -1) {
-        playerStop();
-    } else if (event.key == 'ArrowRight' && player.moveDirection == 1) {
-        playerStop();
+    if (event.key == 'ArrowLeft' && tetromino.moveDirection == -1) {
+        tetrominoStop();
+    } else if (event.key == 'ArrowRight' && tetromino.moveDirection == 1) {
+        tetrominoStop();
     }
 });
 
@@ -313,13 +354,15 @@ cyanElement.addEventListener('input', (event) => {
 
 const arena = createMatrix(10, 20);
 
-const player = {
+const tetromino = {
     hasCollidedHorizontally: false,
     hasCollidedVertically: false,
     matrix: null,
     moveDirection: 0,
-    pos: {x: 0, y: 0}
+    pos: {x: 0, y: 0},
+    rotationState: 0,
+    type: ""
 };
 
-playerReset();
+tetrominoReset();
 update();
