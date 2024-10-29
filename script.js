@@ -50,9 +50,9 @@ const wallKickData = {
 
 let redValue = localStorage.getItem('redValue') || '154';
 let cyanValue = localStorage.getItem('cyanValue') || '140';
-let bestScore = localStorage.getItem('bestScore') || 0;
-let secondBestScore = localStorage.getItem('secondBestScore') || 0;
-let thirdBestScore = localStorage.getItem('thirdBestScore') || 0;
+let bestScore = localStorage.getItem('tetrisBestScore') || 0;
+let secondBestScore = localStorage.getItem('tetrisSecondBestScore') || 0;
+let thirdBestScore = localStorage.getItem('tetrisThirdBestScore') || 0;
 
 let lastUpdateTime = 0;
 let moveDirection = 0;
