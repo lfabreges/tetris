@@ -56,7 +56,7 @@ let thirdBestScore = localStorage.getItem('thirdBestScore') || 0;
 
 let lastUpdateTime = 0;
 let moveDirection = 0;
-let nextTetromino = null;
+let bagOfTetrominos = [];
 let score = 0;
 let tetromino = null;
 let terminoDropInterval = 1000;
@@ -242,22 +242,20 @@ function moveTetromino(direction) {
 }
 
 function newTetromino() {
-    const _tetromino = {}
-
-    _tetromino.hasCollidedHorizontally = false;
-    _tetromino.hasCollidedVertically = false;
-    _tetromino.type = 'IOJLSTZ'[7 * Math.random() | 0];
-    _tetromino.rotationState = 0;
-    _tetromino.matrix = createTetrominoMatrix(_tetromino.type);
-    _tetromino.position = {x: (arena[0].length / 2 | 0) - Math.ceil(_tetromino.matrix[0].length / 2), y: 0};
-
-    if (nextTetromino == null) {
-        nextTetromino = _tetromino;
-        newTetromino();
-    } else {
-        tetromino = nextTetromino;
-        nextTetromino = _tetromino;
+    if (bagOfTetrominos.length <= 1) {
+        const tetrominos = [...'IOJLSTZ'].map(type => ({
+            hasCollidedHorizontally: false,
+            hasCollidedVertically: false,
+            type,
+            rotationState: 0,
+            matrix: createTetrominoMatrix(type),
+            position: {x: 0, y: 0}
+        }));
+        shuffleArray(tetrominos);
+        bagOfTetrominos = [...bagOfTetrominos, ...tetrominos];
     }
+    tetromino = bagOfTetrominos.shift();
+    tetromino.position = {x: 5 - Math.ceil(tetromino.matrix[0].length / 2), y: 0};
 }
 
 function rotateTetromino(direction) {
@@ -315,6 +313,15 @@ function rotateMatrix(matrix, direction) {
     }
 }
 
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const temp = array[i];
+        array[i] = array[j];
+        array[j] = temp;
+    }
+}
+
 function draw() {
     gameCanvasContext.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
     nextTetrominoCanvasContext.clearRect(0, 0, nextTetrominoCanvas.width, nextTetrominoCanvas.height);
@@ -323,8 +330,10 @@ function draw() {
     drawElement(gameCanvasContext, arena, {x: 0, y: 0}, originWithInvisibleRows);
     drawElement(gameCanvasContext, tetromino.matrix, tetromino.position, originWithInvisibleRows);
 
+    const nextTetromino = bagOfTetrominos[0];
     const nextTetrominoWidth = nextTetromino.type == 'I' ? 4 : nextTetromino.type == 'O' ? 2 : 3;
     const nextTetrominoHeight = nextTetromino.type == 'I' ? 3 : 2;
+
     drawElement(
         nextTetrominoCanvasContext,
         nextTetromino.matrix,
