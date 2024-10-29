@@ -1,37 +1,68 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tetris</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="icon" type="image/png" href="favicon.png">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tetris</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/png" href="favicon.png">
 </head>
 <body>
-    <div class="scores">
-        <div>
-            <span>Score : </label>
-            <span id="score">0</span>
+  <div class="container">
+    <div class="calibration-panel">
+      <h2>Calibrage</h2>
+      <div class="color-slider">
+        <label for="red">🔴 Rouge</label>
+        <div class="slider-container">
+          <input type="range" id="red" min="0" max="255" value="128">
+          <div class="button-container">
+            <button type="button" id="redMinusButton">-</button>
+            <button type="button" id="redPlusButton">+</button>
+          </div>
         </div>
-        <div>
-            <span>Meilleur : </label>
-            <span id="bestScore">0</span>
+      </div>
+      <div class="color-slider">
+        <label for="cyan">🔵 Cyan</label>
+        <div class="slider-container">
+          <input type="range" id="cyan" min="0" max="255" value="128">
+          <div class="button-container">
+            <button type="button" id="cyanMinusButton">-</button>
+            <button type="button" id="cyanPlusButton">+</button>
+          </div>
         </div>
+      </div>
+      <div class="calibration-explanations">
+        <p>
+          Ajustez les curseurs pour que chaque couleur soit perçue correctement avec les lunettes anaglyphes&nbsp;:
+        </p>
+        <ul>
+          <li>Lorsque vous fermez votre œil droit, vous ne devriez voir que les éléments de couleur cyan.</li>
+          <li>Lorsque vous fermez votre œil gauche, vous ne devriez voir que les éléments de couleur rouge.</li>
+        </ul>
+      </div>
     </div>
-    <div class="game-container">
-        <canvas id="tetris" width="300" height="600"></canvas>
-        <canvas id="next-tetromino" width="120" height="60"></canvas>
+    <div class="game-area">
+      <canvas id="tetris" width="300" height="600"></canvas>
     </div>
-    <div class="controls">
-        <div>
-            <label for="red">Rouge</label>
-            <input type="range" id="red" min="0" max="255" value="255">
-        </div>
-        <div>
-            <label for="cyan">Cyan</label>
-            <input type="range" id="cyan" min="0" max="255" value="255">
-        </div>
+    <div class="dashboard-panel">
+      <div class="next-tetromino">
+        <h2>Prochain tétromino</h2>
+        <canvas id="next-tetromino" width="150" height="90"></canvas>
+      </div>
+      <div class="current-score">
+        <h2>Score actuel</h2>
+        <span id="score">0</span>
+      </div>
+      <div class="best-scores">
+        <h2>Meilleurs scores</h2>
+        <ul>
+          <li>🥇 <span id="bestScore">0</span></li>
+          <li>🥈 <span id="secondBestScore">0</span></li>
+          <li>🥉 <span id="thirdBestScore">0</span></li>
+        </ul>
+      </div>
     </div>
-    <script src="script.js"></script>
+  </div>
+  <script src="script.js"></script>
 </body>
 </html>

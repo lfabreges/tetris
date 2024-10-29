@@ -1,11 +1,17 @@
-const bestScoreElement = document.getElementById('bestScore');
-const cyanElement = document.getElementById('cyan');
 const gameCanvas = document.getElementById('tetris');
 const gameCanvasContext = gameCanvas.getContext('2d');
 const nextTetrominoCanvas = document.getElementById('next-tetromino');
 const nextTetrominoCanvasContext = nextTetrominoCanvas.getContext('2d');
-const redElement = document.getElementById('red');
 const scoreElement = document.getElementById('score');
+const bestScoreElement = document.getElementById('bestScore');
+const secondBestScoreElement = document.getElementById('secondBestScore');
+const thirdBestScoreElement = document.getElementById('thirdBestScore');
+const cyanElement = document.getElementById('cyan');
+const cyanMinusButton = document.getElementById('cyanMinusButton');
+const cyanPlusButton = document.getElementById('cyanPlusButton');
+const redElement = document.getElementById('red');
+const redMinusButton = document.getElementById('redMinusButton');
+const redPlusButton = document.getElementById('redPlusButton');
 
 const arena = createMatrix(10, 22);
 const colorChangeInterval = 30000;
@@ -45,6 +51,8 @@ const wallKickData = {
 let redValue = localStorage.getItem('redValue') || '154';
 let cyanValue = localStorage.getItem('cyanValue') || '140';
 let bestScore = localStorage.getItem('bestScore') || 0;
+let secondBestScore = localStorage.getItem('secondBestScore') || 0;
+let thirdBestScore = localStorage.getItem('thirdBestScore') || 0;
 
 let lastUpdateTime = 0;
 let moveDirection = 0;
@@ -93,11 +101,7 @@ function clearLines() {
 function gameOver() {
     arena.forEach(row => row.fill(0));
 
-    if (score > bestScore) {
-        bestScore = score;
-        localStorage.setItem('bestScore', bestScore);
-        bestScoreElement.textContent = bestScore;
-    }
+    updateScores();
     score = 0;
     scoreElement.textContent = score;
 
@@ -107,6 +111,27 @@ function gameOver() {
 
 function updateGameSpeed() {
     terminoDropInterval = Math.max(200, 1000 - Math.floor(score / 1000) * 100);
+}
+
+function updateScores() {
+    if (score > bestScore) {
+        thirdBestScore = secondBestScore;
+        secondBestScore = bestScore;
+        bestScore = score;
+    } else if (score > secondBestScore) {
+        thirdBestScore = secondBestScore;
+        secondBestScore = score;
+    } else if (score > thirdBestScore) {
+        thirdBestScore = score;
+    }
+
+    localStorage.setItem('tetrisBestScore', bestScore);
+    localStorage.setItem('tetrisSecondBestScore', secondBestScore);
+    localStorage.setItem('tetrisThirdBestScore', thirdBestScore);
+
+    bestScoreElement.textContent = bestScore;
+    secondBestScoreElement.textContent = secondBestScore;
+    thirdBestScoreElement.textContent = thirdBestScore;
 }
 
 function createTetrominoMatrix(type) {
@@ -293,19 +318,30 @@ function rotateMatrix(matrix, direction) {
 function draw() {
     gameCanvasContext.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
     nextTetrominoCanvasContext.clearRect(0, 0, nextTetrominoCanvas.width, nextTetrominoCanvas.height);
-    drawElement(gameCanvasContext, arena, {x: 0, y: 0}, 2);
-    drawElement(gameCanvasContext, tetromino.matrix, tetromino.position, 2);
-    drawElement(nextTetrominoCanvasContext, nextTetromino.matrix, {x: 0, y: 0})
+
+    const originWithInvisibleRows = {x: 0, y: -2 * grid};
+    drawElement(gameCanvasContext, arena, {x: 0, y: 0}, originWithInvisibleRows);
+    drawElement(gameCanvasContext, tetromino.matrix, tetromino.position, originWithInvisibleRows);
+
+    const nextTetrominoWidth = nextTetromino.type == 'I' ? 4 : nextTetromino.type == 'O' ? 2 : 3;
+    const nextTetrominoHeight = nextTetromino.type == 'I' ? 3 : 2;
+    drawElement(
+        nextTetrominoCanvasContext,
+        nextTetromino.matrix,
+        {x: 0, y: 0},
+        {x: (5 - nextTetrominoWidth) * grid / 2, y: (3 - nextTetrominoHeight) * grid / 2}
+    );
 }
 
-function drawElement(canvasContext, matrix, offset, numberOfInvisibleRows = 0) {
+function drawElement(canvasContext, matrix, offset, origin) {
     const colors = getTetrominoColors();
     matrix.forEach((row, y) => {
         row.forEach((value, x) => {
-            const ajustedY = y + offset.y - numberOfInvisibleRows;
+            const ajustedX = (x + offset.x) * grid + origin.x;
+            const ajustedY = (y + offset.y) * grid + origin.y;
             if (value !== 0 && ajustedY >= 0) {
                 canvasContext.fillStyle = colors[value];
-                canvasContext.fillRect((x + offset.x) * grid, ajustedY * grid, grid - 1, grid - 1);
+                canvasContext.fillRect(ajustedX, ajustedY, grid - 1, grid - 1);
             }
         });
     });
@@ -364,8 +400,32 @@ redElement.addEventListener('input', (event) => {
     event.target.blur();
 });
 
+redMinusButton.addEventListener('click', () => {
+    redElement.value = Math.max(0, Number(redElement.value) - 1);
+    redElement.dispatchEvent(new Event('input'));
+    event.target.blur();
+});
+
+redPlusButton.addEventListener('click', () => {
+    redElement.value = Math.min(255, Number(redElement.value) + 1);
+    redElement.dispatchEvent(new Event('input'));
+    event.target.blur();
+});
+
 cyanElement.addEventListener('input', (event) => {
     cyanValue = event.target.value;
-    localStorage.setItem('cyanValue', cyanValue)
+    localStorage.setItem('cyanValue', cyanValue);
+    event.target.blur();
+});
+
+cyanMinusButton.addEventListener('click', () => {
+    cyanElement.value = Math.max(0, Number(cyanElement.value) - 1);
+    cyanElement.dispatchEvent(new Event('input'));
+    event.target.blur();
+});
+
+cyanPlusButton.addEventListener('click', () => {
+    cyanElement.value = Math.min(255, Number(cyanElement.value) + 1);
+    cyanElement.dispatchEvent(new Event('input'));
     event.target.blur();
 });
