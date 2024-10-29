@@ -1,4 +1,4 @@
-# Tetris anaglyphe
+# Tetris stereo vision
 
 Inspiré par des techniques visuelles cliniques, ce jeu vise à apporter une expérience ludique pour le traitement de
 l’amblyopie fonctionnelle non strabique. Il est conçu pour renforcer la vision binoculaire via l’utilisation de lunettes
