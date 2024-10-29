@@ -256,6 +256,8 @@ function newTetromino() {
     }
     tetromino = bagOfTetrominos.shift();
     tetromino.position = {x: 5 - Math.ceil(tetromino.matrix[0].length / 2), y: 0};
+    tetromino.position.y++;
+    tetromino.position.y -= hasTetrominoCollided() ? 1 : 0;
 }
 
 function rotateTetromino(direction) {
