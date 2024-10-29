@@ -65,6 +65,8 @@ let terminoIdleTime = 0;
 redElement.value = redValue;
 cyanElement.value = cyanValue;
 bestScoreElement.textContent = bestScore;
+secondBestScoreElement.textContent = secondBestScore;
+thirdBestScoreElement.textContent = thirdBestScore;
 
 gameCanvasContext.scale(1, 1);
 nextTetrominoCanvasContext.scale(1, 1);
